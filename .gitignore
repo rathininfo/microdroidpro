@@ -1,0 +1,27 @@
+# Node.js
+server/node_modules/
+server/npm-debug.log*
+
+# Flutter / Dart
+android-sms-forwarder/.dart_tool/
+android-sms-forwarder/.flutter-plugins
+android-sms-forwarder/.flutter-plugins-dependencies
+android-sms-forwarder/.packages
+android-sms-forwarder/build/
+android-sms-forwarder/.pub/
+android-sms-forwarder/.pub-cache/
+
+# Android
+android-sms-forwarder/android/.gradle/
+android-sms-forwarder/android/local.properties
+android-sms-forwarder/android/app/build/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS & Logs
+*.log
+.DS_Store
+Thumbs.db

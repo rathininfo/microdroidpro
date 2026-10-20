@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IVAC & OTP Live Monitor | Realtime Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo-area">
+        <div class="radar-pulse"></div>
+        <h1>IVAC OTP <span>STREAM</span></h1>
+      </div>
+      <div class="header-right">
+        <div id="connectionStatus" class="status-badge disconnected">
+          <span class="status-dot"></span>
+          <span class="status-text">Connecting...</span>
+        </div>
+        <button id="soundToggleBtn" class="action-btn" title="সাউন্ড অন/অফ">
+          🔔 সাউন্ড: অন
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Live Hero Section: Big OTP Highlight -->
+    <main class="main-content">
+      <section class="otp-hero-card">
+        <div class="card-glow"></div>
+        <div class="hero-top">
+          <span class="badge live-badge">সর্বশেষ শনাক্তকৃত ওটিপি (LATEST OTP)</span>
+          <span id="latestTime" class="timestamp">অপেক্ষমাণ...</span>
+        </div>
+
+        <div class="otp-display-container">
+          <div id="otpDisplay" class="otp-digits">------</div>
+          <button id="copyOtpBtn" class="copy-btn" title="কপি করুন">
+            📋 কপি কোড
+          </button>
+        </div>
+
+        <div class="sender-info">
+          <span class="label">প্রেরক (Sender):</span>
+          <span id="latestSender" class="value">এখনো কোনো মেসেজ আসেনি</span>
+        </div>
+
+        <div class="full-message-box">
+          <span class="label">সম্পূর্ণ মেসেজ (Raw SMS):</span>
+          <p id="latestMessage" class="message-text">ফোন থেকে নতুন কোনো IVAC / OTP মেসেজ আসার অপেক্ষায় সার্ভার লিসেন করছে...</p>
+        </div>
+      </section>
+
+      <!-- SMS History Section -->
+      <section class="history-section">
+        <div class="section-header">
+          <h2>মেসেজ হিস্ট্রি (Recent Logs)</h2>
+          <span id="historyCount" class="count-pill">০ টি মেসেজ</span>
+        </div>
+
+        <div class="history-list" id="historyList">
+          <div class="empty-state">কোনো মেসেজ জমা হয়নি</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer info -->
+    <footer class="footer">
+      <span>🚀 Self-Hosted Android SMS Automation Ecosystem</span>
+      <span>Flutter ➔ Node.js (ws) ➔ Python</span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
