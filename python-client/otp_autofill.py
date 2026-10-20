@@ -120,8 +120,18 @@ def on_message(ws, raw_message):
             msg_device = str(payload.get('deviceId', '1')).strip()
             sim_number = str(payload.get('simNumber', '')).strip()
 
-            # ZERO-COLLISION FILTER: Discard any SMS meant for other PCs
-            if TARGET_DEVICE_ID != 'ALL' and msg_device != str(TARGET_DEVICE_ID).strip():
+            # ZERO-COLLISION FILTER: Matches EITHER Slot ID OR exact SIM Phone Number
+            is_match = False
+            target_str = str(TARGET_DEVICE_ID).strip()
+            if target_str == 'ALL':
+                is_match = True
+            elif msg_device.lower() == target_str.lower():
+                is_match = True
+            elif sim_number and (sim_number == target_str or target_str in sim_number):
+                is_match = True
+
+            if not is_match:
+                # Discard any SMS meant for other PCs / SIMs
                 return
 
             otp = payload.get('otp')

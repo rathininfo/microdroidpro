@@ -69,23 +69,24 @@ const server = http.createServer(app);
 // WebSocket Server
 const wss = new WebSocket.Server({ server });
 
-// Targeted Broadcast function: Sends to Dashboard (ALL) and matching device channel
-function broadcastToDevice(deviceId, data) {
+// Targeted Broadcast function: Sends to Dashboard (ALL) and matching device/SIM channel
+function broadcastToDevice(deviceId, simNumber, data) {
   const targetId = String(deviceId || '1').trim();
+  const targetSim = simNumber ? String(simNumber).trim() : '';
   const payload = JSON.stringify(data);
 
   let targetedCount = 0;
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       const sub = client.subscription || 'ALL';
-      // Deliver to Admin/Dashboard ('ALL') OR exactly matching PC client
-      if (sub === 'ALL' || sub === targetId) {
+      // Deliver to Admin/Dashboard ('ALL') OR matching PC client (by deviceId or by simNumber)
+      if (sub === 'ALL' || sub === targetId || (targetSim && sub === targetSim)) {
         client.send(payload);
         targetedCount++;
       }
     }
   });
-  console.log(`[WS] Dispatched event to ${targetedCount} clients (Target: Slot/Device '${targetId}')`);
+  console.log(`[WS] Dispatched event to ${targetedCount} clients (Target: Slot '${targetId}' | SIM '${targetSim}')`);
 }
 
 // Keep-alive heartbeat every 25s for Render/Cloud hosting stability
@@ -176,7 +177,7 @@ app.post('/ivac-sms', (req, res) => {
   console.log(`========================================\n`);
 
   // Zero-Collision targeted delivery to channel subscribers + Dashboard
-  broadcastToDevice(targetDeviceId, {
+  broadcastToDevice(targetDeviceId, payload.simNumber, {
     type: 'NEW_SMS',
     data: payload
   });
