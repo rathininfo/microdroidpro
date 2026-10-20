@@ -1,5 +1,7 @@
 package com.example.ivac_sms_forwarder
 
+import android.os.Handler
+import android.os.Looper
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -11,11 +13,17 @@ class MainActivity : FlutterActivity() {
         private var methodChannel: MethodChannel? = null
 
         fun sendSmsEventToFlutter(sender: String, message: String, timestamp: String) {
-            methodChannel?.invokeMethod("onSmsReceived", mapOf(
-                "sender" to sender,
-                "message" to message,
-                "timestamp" to timestamp
-            ))
+            Handler(Looper.getMainLooper()).post {
+                try {
+                    methodChannel?.invokeMethod("onSmsReceived", mapOf(
+                        "sender" to sender,
+                        "message" to message,
+                        "timestamp" to timestamp
+                    ))
+                } catch (e: Exception) {
+                    // Ignore if Flutter UI engine is not attached
+                }
+            }
         }
     }
 

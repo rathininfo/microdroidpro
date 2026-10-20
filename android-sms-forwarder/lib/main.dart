@@ -7,9 +7,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'background_service.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeBackgroundService();
   runApp(const IvacForwarderApp());
 }
 
@@ -53,8 +52,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadSettings();
+    _initBackgroundServiceAsync();
     _checkPermissions();
     _listenToServiceEvents();
+  }
+
+  Future<void> _initBackgroundServiceAsync() async {
+    try {
+      await initializeBackgroundService();
+      final isRunning = await FlutterBackgroundService().isRunning();
+      if (mounted) {
+        setState(() {
+          _isServiceRunning = isRunning;
+        });
+      }
+    } catch (e) {
+      debugPrint("Background service init error: $e");
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -93,6 +107,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ SMS পারমিশন সফলভাবে দেওয়া হয়েছে!')),
       );
+      try {
+        await FlutterBackgroundService().startService();
+        if (mounted) {
+          setState(() {
+            _isServiceRunning = true;
+          });
+        }
+      } catch (e) {
+        debugPrint("Service start error: $e");
+      }
     }
     _checkPermissions();
   }

@@ -7,14 +7,14 @@ const String defaultServerUrl = "http://192.168.31.140:3000/ivac-sms";
 const String notificationChannelId = 'ivac_sms_foreground_service';
 const int notificationId = 888;
 
-/// Initialize Background Service
+/// Initialize Background Service safely without auto-starting prematurely
 Future<void> initializeBackgroundService() async {
   final service = FlutterBackgroundService();
 
   await service.configure(
     androidConfiguration: AndroidConfiguration(
       onStart: onServiceStart,
-      autoStart: true,
+      autoStart: false,
       autoStartOnBoot: true,
       isForegroundMode: true,
       notificationChannelId: notificationChannelId,
