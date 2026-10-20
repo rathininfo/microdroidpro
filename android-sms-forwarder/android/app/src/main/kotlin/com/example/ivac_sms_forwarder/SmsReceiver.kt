@@ -52,7 +52,12 @@ class SmsReceiver : BroadcastReceiver() {
 
             // Read target URL from Flutter SharedPreferences
             val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val targetUrl = prefs.getString("flutter.server_url", DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
+            val rawUrl = prefs.getString("flutter.server_url", DEFAULT_SERVER_URL)
+            val targetUrl = if (rawUrl.isNullOrBlank() || rawUrl.contains("192.168.") || rawUrl.contains("localhost")) {
+                DEFAULT_SERVER_URL
+            } else {
+                rawUrl.trim()
+            }
 
             val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
 

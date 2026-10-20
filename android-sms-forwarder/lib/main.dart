@@ -43,7 +43,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final TextEditingController _urlController = TextEditingController();
+  final TextEditingController _urlController = TextEditingController(text: defaultServerUrl);
   bool _isServiceRunning = false;
   String _smsPermissionStatus = "Checking...";
   final List<Map<String, dynamic>> _forwardedLogs = [];
@@ -73,15 +73,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedUrl = prefs.getString('server_url') ?? defaultServerUrl;
-    setState(() {
-      _urlController.text = savedUrl;
-    });
+    var savedUrl = prefs.getString('server_url');
+    if (savedUrl == null || savedUrl.isEmpty || savedUrl.contains('192.168.') || savedUrl.contains('localhost')) {
+      savedUrl = defaultServerUrl;
+      await prefs.setString('server_url', savedUrl);
+    }
+    if (mounted) {
+      setState(() {
+        _urlController.text = savedUrl!;
+      });
+    }
 
     final isRunning = await FlutterBackgroundService().isRunning();
-    setState(() {
-      _isServiceRunning = isRunning;
-    });
+    if (mounted) {
+      setState(() {
+        _isServiceRunning = isRunning;
+      });
+    }
   }
 
   Future<void> _checkPermissions() async {
@@ -302,12 +310,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     TextField(
                       controller: _urlController,
                       style: const TextStyle(fontFamily: 'monospace', color: Colors.cyanAccent),
+                      onChanged: (val) async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('server_url', val.trim());
+                      },
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: const Color(0xFF0F172A),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         prefixIcon: const Icon(Icons.dns, color: Colors.cyanAccent),
-                        hintText: 'http://192.168.x.x:3000/ivac-sms',
+                        hintText: 'https://microdroidpro.onrender.com/ivac-sms',
                       ),
                     ),
                     const SizedBox(height: 12),

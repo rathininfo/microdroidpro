@@ -44,8 +44,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
-          tag_name: v1.0.3
-          name: "IVAC SMS Forwarder v1.0.3 (Cloud Ready)"
+          tag_name: v1.0.4
+          name: "IVAC SMS Forwarder v1.0.4 (Cloud Auto-Save)"
           body: "Direct download link for your Android Phone! Tap the APK below to download and install."
           draft: false
           prerelease: false
