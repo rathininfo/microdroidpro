@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 const String defaultServerUrl = "http://192.168.31.140:3000/ivac-sms";
 const String notificationChannelId = 'ivac_sms_foreground_service';
@@ -11,21 +10,6 @@ const int notificationId = 888;
 /// Initialize Background Service
 Future<void> initializeBackgroundService() async {
   final service = FlutterBackgroundService();
-
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    notificationChannelId,
-    'IVAC SMS Monitor Service',
-    description: 'Keeps SMS monitoring active 24/7 in background',
-    importance: Importance.low,
-  );
-
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
 
   await service.configure(
     androidConfiguration: AndroidConfiguration(
