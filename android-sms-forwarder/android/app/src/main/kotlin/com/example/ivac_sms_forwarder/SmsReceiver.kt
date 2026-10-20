@@ -59,11 +59,12 @@ class SmsReceiver : BroadcastReceiver() {
                 rawUrl.trim()
             }
 
+            val deviceId = prefs.getString("flutter.device_id", "1") ?: "1"
             val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
 
             // Forward in background thread
             thread {
-                sendPostRequest(targetUrl, sender, messageBody, timestamp)
+                sendPostRequest(targetUrl, deviceId, sender, messageBody, timestamp)
             }
 
             // Notify Flutter UI if MainActivity is active
@@ -74,7 +75,7 @@ class SmsReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun sendPostRequest(targetUrl: String, sender: String, message: String, timestamp: String) {
+    private fun sendPostRequest(targetUrl: String, deviceId: String, sender: String, message: String, timestamp: String) {
         var connection: HttpURLConnection? = null
         try {
             val url = URL(targetUrl)
@@ -87,6 +88,7 @@ class SmsReceiver : BroadcastReceiver() {
             connection.doOutput = true
 
             val json = JSONObject().apply {
+                put("deviceId", deviceId)
                 put("sender", sender)
                 put("message", message)
                 put("timestamp", timestamp)

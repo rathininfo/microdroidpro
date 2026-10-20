@@ -33,7 +33,10 @@
       <section class="otp-hero-card">
         <div class="card-glow"></div>
         <div class="hero-top">
-          <span class="badge live-badge">সর্বশেষ শনাক্তকৃত ওটিপি (LATEST OTP)</span>
+          <div class="hero-badges">
+            <span class="badge live-badge">সর্বশেষ শনাক্তকৃত ওটিপি (LATEST OTP)</span>
+            <span id="latestDeviceBadge" class="badge device-badge">স্লট / ডিভাইস: -</span>
+          </div>
           <span id="latestTime" class="timestamp">অপেক্ষমাণ...</span>
         </div>
 
@@ -52,6 +55,17 @@
         <div class="full-message-box">
           <span class="label">সম্পূর্ণ মেসেজ (Raw SMS):</span>
           <p id="latestMessage" class="message-text">ফোন থেকে নতুন কোনো IVAC / OTP মেসেজ আসার অপেক্ষায় সার্ভার লিসেন করছে...</p>
+        </div>
+      </section>
+
+      <!-- Dynamic Multi-Device Live Grid -->
+      <section class="device-grid-section">
+        <div class="section-header">
+          <h2>লাইভ ডিভাইস ও স্লট মনিটর (Zero-Collision Multi-Device Grid)</h2>
+          <span id="activeDeviceCount" class="count-pill">০ টি সক্রিয় স্লট</span>
+        </div>
+        <div class="device-grid" id="deviceGrid">
+          <div class="empty-state">কোনো স্লট এখনো ওটিপি পাঠায়নি। যেকোনো ফোন থেকে টেস্ট পিং বা ওটিপি পাঠান।</div>
         </div>
       </section>
 

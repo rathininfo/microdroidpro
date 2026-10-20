@@ -5,6 +5,9 @@ const otpDisplay = document.getElementById('otpDisplay');
 const latestSender = document.getElementById('latestSender');
 const latestTime = document.getElementById('latestTime');
 const latestMessage = document.getElementById('latestMessage');
+const latestDeviceBadge = document.getElementById('latestDeviceBadge');
+const deviceGrid = document.getElementById('deviceGrid');
+const activeDeviceCount = document.getElementById('activeDeviceCount');
 const copyOtpBtn = document.getElementById('copyOtpBtn');
 const historyList = document.getElementById('historyList');
 const historyCount = document.getElementById('historyCount');
@@ -13,6 +16,7 @@ const soundToggleBtn = document.getElementById('soundToggleBtn');
 let isSoundEnabled = true;
 let currentOtp = '';
 let audioCtx = null;
+const knownDevices = new Map();
 
 // Sound synthesizer via Web Audio API (No external sound files required)
 function playNotificationChime() {
@@ -75,7 +79,7 @@ copyOtpBtn.addEventListener('click', async () => {
   }
 });
 
-// Update the main OTP view
+// Update the main Hero OTP view
 function updateLatestOtpCard(data) {
   if (!data) return;
 
@@ -86,6 +90,10 @@ function updateLatestOtpCard(data) {
   otpDisplay.classList.remove('new-pulse');
   void otpDisplay.offsetWidth; // trigger reflow
   otpDisplay.classList.add('new-pulse');
+
+  if (latestDeviceBadge) {
+    latestDeviceBadge.textContent = `স্লট / ডিভাইস: #${data.deviceId || '1'}`;
+  }
 
   latestSender.textContent = data.sender || 'Unknown';
   latestMessage.textContent = data.message || '';
@@ -98,16 +106,63 @@ function updateLatestOtpCard(data) {
   });
 }
 
+// Render or update individual Slot/Device Card in the Live Grid
+function renderOrUpdateSlotCard(deviceId, data) {
+  if (!deviceGrid) return;
+  const dId = String(deviceId || '1').trim();
+  knownDevices.set(dId, data);
+
+  // Clear empty state
+  const emptyState = deviceGrid.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  let card = document.getElementById(`slot-card-${dId}`);
+  const timeStr = data && data.receivedAt ? new Date(data.receivedAt).toLocaleTimeString() : 'এখনই';
+  const otpStr = data && data.otp ? data.otp : 'অপেক্ষমাণ';
+
+  if (!card) {
+    card = document.createElement('div');
+    card.id = `slot-card-${dId}`;
+    card.className = 'slot-card';
+    deviceGrid.appendChild(card);
+  }
+
+  card.innerHTML = `
+    <div class="slot-card-top">
+      <div class="slot-id">
+        <span class="slot-status-dot"></span>
+        <span>ডিভাইস / স্লট #${dId}</span>
+      </div>
+      <span class="slot-time">${timeStr}</span>
+    </div>
+    <div class="slot-otp">${otpStr}</div>
+    <div class="slot-time">প্রেরক: ${data && data.sender ? data.sender : 'IVAC'}</div>
+  `;
+
+  // Flash animation on update
+  card.classList.remove('active-pulse');
+  void card.offsetWidth;
+  card.classList.add('active-pulse');
+
+  if (activeDeviceCount) {
+    activeDeviceCount.textContent = `${knownDevices.size} টি সক্রিয় স্লট`;
+  }
+}
+
 // Render historical messages
 function renderHistoryItem(item) {
   const div = document.createElement('div');
   div.className = 'history-item';
 
   const timeStr = new Date(item.receivedAt || Date.now()).toLocaleTimeString();
+  const dId = item.deviceId || '1';
 
   div.innerHTML = `
     <div class="history-left">
-      <span class="history-sender">${item.sender}</span>
+      <div>
+        <span class="history-device-tag">স্লট #${dId}</span>
+        <span class="history-sender">${item.sender}</span>
+      </div>
       <span class="history-body">${item.message}</span>
       <span class="history-time">${timeStr}</span>
     </div>
@@ -127,7 +182,7 @@ function connectWebSocket() {
   ws.onopen = () => {
     connectionStatus.className = 'status-badge connected';
     statusText.textContent = 'লাইভ কানেক্টেড (Live)';
-    console.log('[WS] Connected to server');
+    console.log('[WS] Connected to server (Dashboard mode: ALL)');
   };
 
   ws.onmessage = (event) => {
@@ -137,6 +192,11 @@ function connectWebSocket() {
       if (msg.type === 'INIT') {
         if (msg.latest) {
           updateLatestOtpCard(msg.latest);
+        }
+        if (msg.byDevice) {
+          Object.keys(msg.byDevice).forEach(dId => {
+            renderOrUpdateSlotCard(dId, msg.byDevice[dId]);
+          });
         }
         if (msg.history && msg.history.length > 0) {
           historyList.innerHTML = '';
@@ -148,6 +208,7 @@ function connectWebSocket() {
       } else if (msg.type === 'NEW_SMS') {
         const item = msg.data;
         updateLatestOtpCard(item);
+        renderOrUpdateSlotCard(item.deviceId, item);
         playNotificationChime();
 
         // Add to history list on top

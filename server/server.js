@@ -14,9 +14,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// In-memory message store (recent 50 messages)
+// In-memory message store (recent 100 messages)
 const smsHistory = [];
 let latestOtpInfo = null;
+const latestByDevice = {}; // Map of deviceId -> latest payload
+const activeDevices = new Set(); // Track all seen device IDs
 
 // Mapping of English number words to digits
 const WORD_TO_DIGIT = {
@@ -67,13 +69,23 @@ const server = http.createServer(app);
 // WebSocket Server
 const wss = new WebSocket.Server({ server });
 
-function broadcast(data) {
+// Targeted Broadcast function: Sends to Dashboard (ALL) and matching device channel
+function broadcastToDevice(deviceId, data) {
+  const targetId = String(deviceId || '1').trim();
   const payload = JSON.stringify(data);
+
+  let targetedCount = 0;
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(payload);
+      const sub = client.subscription || 'ALL';
+      // Deliver to Admin/Dashboard ('ALL') OR exactly matching PC client
+      if (sub === 'ALL' || sub === targetId) {
+        client.send(payload);
+        targetedCount++;
+      }
     }
   });
+  console.log(`[WS] Dispatched event to ${targetedCount} clients (Target: Slot/Device '${targetId}')`);
 }
 
 // Keep-alive heartbeat every 25s for Render/Cloud hosting stability
@@ -87,16 +99,38 @@ setInterval(() => {
 
 wss.on('connection', (ws, req) => {
   ws.isAlive = true;
+  ws.subscription = 'ALL'; // Default to ALL until a PC client subscribes to a specific channel
   ws.on('pong', () => { ws.isAlive = true; });
 
   const clientIp = req.socket.remoteAddress;
   console.log(`[WS] New client connected from ${clientIp} (Total clients: ${wss.clients.size})`);
 
+  // Handle client messages (e.g. { type: 'SUBSCRIBE', deviceId: '1' })
+  ws.on('message', (raw) => {
+    try {
+      const data = JSON.parse(raw);
+      if (data.type === 'SUBSCRIBE') {
+        ws.subscription = data.deviceId ? String(data.deviceId).trim() : 'ALL';
+        console.log(`[WS] Client locked to channel/device: '${ws.subscription}'`);
+
+        ws.send(JSON.stringify({
+          type: 'SUBSCRIBED',
+          deviceId: ws.subscription,
+          latest: ws.subscription === 'ALL' ? latestOtpInfo : (latestByDevice[ws.subscription] || null)
+        }));
+      }
+    } catch (e) {
+      // Ignore non-json frames
+    }
+  });
+
   // Send current state & history to newly connected client
   ws.send(JSON.stringify({
     type: 'INIT',
     latest: latestOtpInfo,
-    history: smsHistory.slice(0, 20)
+    byDevice: latestByDevice,
+    activeDevices: Array.from(activeDevices),
+    history: smsHistory.slice(0, 30)
   }));
 
   ws.on('close', () => {
@@ -104,19 +138,21 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-// Endpoint for Flutter App to push SMS
+// Endpoint for Mobile App to push SMS
 app.post('/ivac-sms', (req, res) => {
-  const { sender, message, timestamp } = req.body;
+  const { sender, message, timestamp, deviceId } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Missing message body' });
   }
 
+  const targetDeviceId = String(deviceId || '1').trim();
   const receivedAt = timestamp || new Date().toISOString();
   const detectedOtp = extractOtp(message);
 
   const payload = {
     id: Date.now().toString(),
+    deviceId: targetDeviceId,
     sender: sender || 'Unknown Sender',
     message: message,
     otp: detectedOtp,
@@ -124,39 +160,68 @@ app.post('/ivac-sms', (req, res) => {
   };
 
   latestOtpInfo = payload;
+  latestByDevice[targetDeviceId] = payload;
+  activeDevices.add(targetDeviceId);
+
   smsHistory.unshift(payload);
-  if (smsHistory.length > 50) smsHistory.pop();
+  if (smsHistory.length > 100) smsHistory.pop();
 
   console.log(`\n========================================`);
-  console.log(`[NEW SMS RECEIVED] from: ${payload.sender}`);
+  console.log(`[NEW SMS RECEIVED] Device/Slot: [${targetDeviceId}]`);
+  console.log(`[FROM]: ${payload.sender}`);
   console.log(`[OTP DETECTED]: ${detectedOtp || 'None'}`);
   console.log(`[MESSAGE]: ${message}`);
   console.log(`========================================\n`);
 
-  // Broadcast to Web Dashboard and Python Auto-typer
-  broadcast({
+  // Zero-Collision targeted delivery to channel subscribers + Dashboard
+  broadcastToDevice(targetDeviceId, {
     type: 'NEW_SMS',
     data: payload
   });
 
   return res.status(200).json({
     success: true,
-    message: 'SMS received and broadcasted',
+    deviceId: targetDeviceId,
+    message: `SMS received and dispatched to channel ${targetDeviceId}`,
     detectedOtp: detectedOtp
   });
 });
 
-// REST endpoint to get latest OTP directly
+// REST endpoint to get latest OTP directly (all devices or specific device)
 app.get('/latest-otp', (req, res) => {
   res.json({
-    latest: latestOtpInfo
+    latest: latestOtpInfo,
+    byDevice: latestByDevice,
+    activeDevices: Array.from(activeDevices)
+  });
+});
+
+app.get('/latest-otp/:deviceId', (req, res) => {
+  const dId = String(req.params.deviceId).trim();
+  res.json({
+    deviceId: dId,
+    latest: latestByDevice[dId] || null
+  });
+});
+
+// REST endpoint to get active devices list
+app.get('/devices', (req, res) => {
+  res.json({
+    activeDevices: Array.from(activeDevices),
+    byDevice: latestByDevice
   });
 });
 
 // REST endpoint to get SMS history
 app.get('/history', (req, res) => {
+  const filterDevice = req.query.device ? String(req.query.device).trim() : null;
+  const filtered = filterDevice 
+    ? smsHistory.filter(item => String(item.deviceId) === filterDevice)
+    : smsHistory;
+
   res.json({
-    history: smsHistory
+    count: filtered.length,
+    history: filtered
   });
 });
 
