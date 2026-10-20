@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -97,16 +98,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _listenToServiceEvents() {
-    FlutterBackgroundService().on('onSmsForwarded').listen((event) {
-      if (event != null && mounted) {
-        setState(() {
-          _forwardedLogs.insert(0, {
-            'sender': event['sender'] ?? 'Unknown',
-            'body': event['body'] ?? '',
-            'time': event['time'] ?? '',
-            'success': event['success'] ?? false,
+    const MethodChannel channel = MethodChannel('com.example.ivac_sms_forwarder/sms');
+    channel.setMethodCallHandler((call) async {
+      if (call.method == 'onSmsReceived' && mounted) {
+        final data = call.arguments as Map<dynamic, dynamic>?;
+        if (data != null) {
+          setState(() {
+            _forwardedLogs.insert(0, {
+              'sender': data['sender'] ?? 'Unknown',
+              'body': data['message'] ?? '',
+              'time': data['timestamp'] ?? '',
+              'success': true,
+            });
           });
-        });
+        }
       }
     });
   }
