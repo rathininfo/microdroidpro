@@ -140,7 +140,7 @@ wss.on('connection', (ws, req) => {
 
 // Endpoint for Mobile App to push SMS
 app.post('/ivac-sms', (req, res) => {
-  const { sender, message, timestamp, deviceId } = req.body;
+  const { sender, message, timestamp, deviceId, simNumber } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Missing message body' });
@@ -153,6 +153,7 @@ app.post('/ivac-sms', (req, res) => {
   const payload = {
     id: Date.now().toString(),
     deviceId: targetDeviceId,
+    simNumber: simNumber ? String(simNumber).trim() : '',
     sender: sender || 'Unknown Sender',
     message: message,
     otp: detectedOtp,
@@ -168,6 +169,7 @@ app.post('/ivac-sms', (req, res) => {
 
   console.log(`\n========================================`);
   console.log(`[NEW SMS RECEIVED] Device/Slot: [${targetDeviceId}]`);
+  console.log(`[SIM NUMBER]: ${payload.simNumber || 'None / Not Specified'}`);
   console.log(`[FROM]: ${payload.sender}`);
   console.log(`[OTP DETECTED]: ${detectedOtp || 'None'}`);
   console.log(`[MESSAGE]: ${message}`);

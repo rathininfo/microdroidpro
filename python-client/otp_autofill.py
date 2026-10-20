@@ -81,9 +81,11 @@ def extract_otp(text):
     digit_match = re.search(r'\b\d{4,8}\b', text)
     return digit_match.group(0) if digit_match else None
 
-def handle_incoming_otp(otp, sender, message, device_id):
+def handle_incoming_otp(otp, sender, message, device_id, sim_number=""):
     print("\n" + "=" * 55)
     print(f"🔥 [NEW OTP FOR THIS PC (Slot #{device_id})]: {otp}")
+    if sim_number:
+        print(f"📱 Target SIM Phone: {sim_number}")
     print(f"📞 Sender: {sender}")
     print(f"💬 Full Message: {message.strip()}")
     print("=" * 55)
@@ -116,6 +118,7 @@ def on_message(ws, raw_message):
         if msg_type == 'NEW_SMS':
             payload = data.get('data', {})
             msg_device = str(payload.get('deviceId', '1')).strip()
+            sim_number = str(payload.get('simNumber', '')).strip()
 
             # ZERO-COLLISION FILTER: Discard any SMS meant for other PCs
             if TARGET_DEVICE_ID != 'ALL' and msg_device != str(TARGET_DEVICE_ID).strip():
@@ -130,9 +133,10 @@ def on_message(ws, raw_message):
                 otp = extract_otp(msg_text)
 
             if otp:
-                handle_incoming_otp(otp, sender, msg_text, msg_device)
+                handle_incoming_otp(otp, sender, msg_text, msg_device, sim_number)
             else:
-                print(f"\nℹ️  [Slot #{msg_device} SMS Received, No OTP]: {sender} -> {msg_text}")
+                sim_str = f" (SIM: {sim_number})" if sim_number else ""
+                print(f"\nℹ️  [Slot #{msg_device}{sim_str} SMS Received, No OTP]: {sender} -> {msg_text}")
 
         elif msg_type == 'SUBSCRIBED':
             d_id = data.get('deviceId')

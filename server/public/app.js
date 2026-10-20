@@ -6,6 +6,7 @@ const latestSender = document.getElementById('latestSender');
 const latestTime = document.getElementById('latestTime');
 const latestMessage = document.getElementById('latestMessage');
 const latestDeviceBadge = document.getElementById('latestDeviceBadge');
+const latestSimBadge = document.getElementById('latestSimBadge');
 const deviceGrid = document.getElementById('deviceGrid');
 const activeDeviceCount = document.getElementById('activeDeviceCount');
 const copyOtpBtn = document.getElementById('copyOtpBtn');
@@ -95,6 +96,10 @@ function updateLatestOtpCard(data) {
     latestDeviceBadge.textContent = `স্লট / ডিভাইস: #${data.deviceId || '1'}`;
   }
 
+  if (latestSimBadge) {
+    latestSimBadge.textContent = data.simNumber ? `📱 সিম: ${data.simNumber}` : '📱 সিম: N/A';
+  }
+
   latestSender.textContent = data.sender || 'Unknown';
   latestMessage.textContent = data.message || '';
 
@@ -119,6 +124,7 @@ function renderOrUpdateSlotCard(deviceId, data) {
   let card = document.getElementById(`slot-card-${dId}`);
   const timeStr = data && data.receivedAt ? new Date(data.receivedAt).toLocaleTimeString() : 'এখনই';
   const otpStr = data && data.otp ? data.otp : 'অপেক্ষমাণ';
+  const simStr = data && data.simNumber ? data.simNumber : 'সিম নম্বর নেই';
 
   if (!card) {
     card = document.createElement('div');
@@ -135,6 +141,7 @@ function renderOrUpdateSlotCard(deviceId, data) {
       </div>
       <span class="slot-time">${timeStr}</span>
     </div>
+    <div class="slot-sim">📱 সিম: ${simStr}</div>
     <div class="slot-otp">${otpStr}</div>
     <div class="slot-time">প্রেরক: ${data && data.sender ? data.sender : 'IVAC'}</div>
   `;
@@ -156,11 +163,13 @@ function renderHistoryItem(item) {
 
   const timeStr = new Date(item.receivedAt || Date.now()).toLocaleTimeString();
   const dId = item.deviceId || '1';
+  const simStr = item.simNumber ? `📱 ${item.simNumber}` : '';
 
   div.innerHTML = `
     <div class="history-left">
       <div>
         <span class="history-device-tag">স্লট #${dId}</span>
+        ${simStr ? `<span class="history-sim-tag">${simStr}</span>` : ''}
         <span class="history-sender">${item.sender}</span>
       </div>
       <span class="history-body">${item.message}</span>

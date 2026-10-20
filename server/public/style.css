@@ -357,6 +357,18 @@ body {
   margin-right: 6px;
 }
 
+.history-sim-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  margin-right: 6px;
+}
+
 .hero-badges {
   display: flex;
   align-items: center;
@@ -368,6 +380,19 @@ body {
   background: rgba(16, 185, 129, 0.15);
   color: var(--accent-green);
   border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.sim-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.slot-sim {
+  font-size: 12px;
+  color: #fbbf24;
+  font-family: var(--font-mono);
+  font-weight: 600;
 }
 
 .device-grid-section {

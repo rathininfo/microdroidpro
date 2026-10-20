@@ -13,8 +13,9 @@ import sys
 
 SERVER_URL = os.environ.get("SERVER_URL") or (sys.argv[1] if len(sys.argv) > 1 else "https://microdroidpro.onrender.com/ivac-sms")
 DEVICE_ID = sys.argv[2] if len(sys.argv) > 2 else "1"
+SIM_NUMBER = sys.argv[3] if len(sys.argv) > 3 else f"01710{random.randint(100000, 999999)}"
 
-def send_mock_sms(device_id=DEVICE_ID):
+def send_mock_sms(device_id=DEVICE_ID, sim_number=SIM_NUMBER):
     random_otp = str(random.randint(100000, 999999))
     digit_words = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']
     # Example: Three-Seven-Zero-Five-Six-Four
@@ -30,12 +31,13 @@ def send_mock_sms(device_id=DEVICE_ID):
     selected_message = random.choice(sample_messages)
     payload = {
         "deviceId": str(device_id),
+        "simNumber": str(sim_number),
         "sender": "IVACBD",
         "message": selected_message,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
     }
 
-    print(f"📤 Sending mock SMS for Slot #{device_id} to {SERVER_URL}...")
+    print(f"📤 Sending mock SMS for Slot #{device_id} (SIM: {sim_number}) to {SERVER_URL}...")
     try:
         response = requests.post(SERVER_URL, json=payload, timeout=10)
         if response.status_code == 200:

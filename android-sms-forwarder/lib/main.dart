@@ -45,6 +45,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final TextEditingController _urlController = TextEditingController(text: defaultServerUrl);
   final TextEditingController _deviceIdController = TextEditingController(text: "1");
+  final TextEditingController _simNumberController = TextEditingController();
   bool _isServiceRunning = false;
   String _smsPermissionStatus = "Checking...";
   final List<Map<String, dynamic>> _forwardedLogs = [];
@@ -80,11 +81,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await prefs.setString('server_url', savedUrl);
     }
     final savedDeviceId = prefs.getString('device_id') ?? "1";
+    final savedSimNumber = prefs.getString('sim_number') ?? "";
 
     if (mounted) {
       setState(() {
         _urlController.text = savedUrl!;
         _deviceIdController.text = savedDeviceId;
+        _simNumberController.text = savedSimNumber;
       });
     }
 
@@ -156,11 +159,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('server_url', _urlController.text.trim());
     await prefs.setString('device_id', _deviceIdController.text.trim().isEmpty ? "1" : _deviceIdController.text.trim());
+    await prefs.setString('sim_number', _simNumberController.text.trim());
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.teal,
-          content: Text('💾 সার্ভার URL ও স্লট আইডি সফলভাবে সংরক্ষিত হয়েছে!'),
+          content: Text('💾 সার্ভার URL, স্লট ও সিম নম্বর সংরক্ষিত হয়েছে!'),
         ),
       );
     }
@@ -169,8 +173,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _sendTestSms() async {
     final targetUrl = _urlController.text.trim();
     final dId = _deviceIdController.text.trim().isEmpty ? "1" : _deviceIdController.text.trim();
+    final simNum = _simNumberController.text.trim();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('📤 স্লট #$dId থেকে সার্ভারে টেস্ট পাঠানো হচ্ছে...')),
+      SnackBar(content: Text('📤 স্লট #$dId (${simNum.isEmpty ? "No SIM" : simNum}) থেকে টেস্ট পাঠানো হচ্ছে...')),
     );
 
     try {
@@ -179,8 +184,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'deviceId': dId,
+          'simNumber': simNum,
           'sender': 'IVAC-TEST',
-          'message': 'Your IVAC test OTP is 987654. Sent from Slot #$dId.',
+          'message': 'Your IVAC test OTP is 987654. Sent from Slot #$dId (SIM: $simNum).',
           'timestamp': DateTime.now().toIso8601String(),
         }),
       ).timeout(const Duration(seconds: 5));
@@ -330,6 +336,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         prefixIcon: const Icon(Icons.phonelink_setup, color: Colors.greenAccent),
                         hintText: '1',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'সিম নম্বর (SIM Phone Number)',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'এই ফোনের সিম কার্ড নম্বর দিন (যেমন: 017xxxxxxxx)। ওটিপির সাথে এই নম্বরটি পিসিতে দেখা যাবে।',
+                      style: TextStyle(fontSize: 12, color: Colors.white60),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _simNumberController,
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(fontFamily: 'monospace', color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 16),
+                      onChanged: (val) async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('sim_number', val.trim());
+                      },
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFF0F172A),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        prefixIcon: const Icon(Icons.sim_card, color: Colors.amberAccent),
+                        hintText: '017xxxxxxxx',
                       ),
                     ),
                     const SizedBox(height: 16),
