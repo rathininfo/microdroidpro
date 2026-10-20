@@ -18,13 +18,33 @@ app.use(express.static(path.join(__dirname, 'public')));
 const smsHistory = [];
 let latestOtpInfo = null;
 
-// Helper function to extract OTP (4 to 8 digits)
+// Mapping of English number words to digits
+const WORD_TO_DIGIT = {
+  zero: '0', one: '1', two: '2', three: '3', four: '4',
+  five: '5', six: '6', seven: '7', eight: '8', nine: '9'
+};
+
+// Smart OTP extractor (Handles both 'Three-Seven-Zero-Five-Six-Four' and '370564')
 function extractOtp(text) {
   if (!text) return null;
-  // Looks for 4-8 consecutive digits, especially near words like otp, code, pin, verification
-  const otpPattern = /\b\d{4,8}\b/;
-  const match = text.match(otpPattern);
-  return match ? match[0] : null;
+
+  // 1. Check for IVAC spelled-out words (e.g. Three-Seven-Zero-Five-Six-Four)
+  const wordTokens = Object.keys(WORD_TO_DIGIT).join('|');
+  const wordPattern = new RegExp(`\\b(?:${wordTokens})(?:[-–—\\s]+(?:${wordTokens})){3,7}\\b`, 'i');
+  const wordMatch = text.match(wordPattern);
+
+  if (wordMatch) {
+    const words = wordMatch[0].toLowerCase().split(/[-–—\s]+/);
+    const convertedDigits = words.map(w => WORD_TO_DIGIT[w]).filter(Boolean).join('');
+    if (convertedDigits.length >= 4) {
+      return convertedDigits;
+    }
+  }
+
+  // 2. Check for standard 4 to 8 numerical digits
+  const digitPattern = /\b\d{4,8}\b/;
+  const digitMatch = text.match(digitPattern);
+  return digitMatch ? digitMatch[0] : null;
 }
 
 // Helper to get local network IP addresses

@@ -35,12 +35,29 @@ def alert_sound():
     except Exception:
         pass
 
+WORD_TO_DIGIT = {
+    'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+    'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+}
+
 def extract_otp(text):
-    """Regex to safely extract 4 to 8 digit OTP codes"""
+    """Safely extracts both spelled-out words (Three-Seven-Zero...) and numerical digits"""
     if not text:
         return None
-    match = re.search(r'\b\d{4,8}\b', text)
-    return match.group(0) if match else None
+
+    # 1. Check for IVAC spelled-out words (e.g. Three-Seven-Zero-Five-Six-Four)
+    word_tokens = '|'.join(WORD_TO_DIGIT.keys())
+    word_pattern = rf'\b(?:{word_tokens})(?:[-–—\s]+(?:{word_tokens})){{3,7}}\b'
+    word_match = re.search(word_pattern, text, re.IGNORECASE)
+    if word_match:
+        words = re.split(r'[-–—\s]+', word_match.group(0).lower())
+        converted = ''.join(WORD_TO_DIGIT.get(w, '') for w in words if w in WORD_TO_DIGIT)
+        if len(converted) >= 4:
+            return converted
+
+    # 2. Check for standard 4 to 8 numerical digits
+    digit_match = re.search(r'\b\d{4,8}\b', text)
+    return digit_match.group(0) if digit_match else None
 
 def handle_incoming_otp(otp, sender, message):
     print("\n" + "=" * 55)

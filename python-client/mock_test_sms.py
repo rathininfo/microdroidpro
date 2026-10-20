@@ -14,11 +14,15 @@ import sys
 SERVER_URL = os.environ.get("SERVER_URL") or (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:3000/ivac-sms")
 
 def send_mock_sms():
-    random_otp = random.randint(100000, 999999)
+    digit_words = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']
+    # Example: Three-Seven-Zero-Five-Six-Four
+    sample_words = [random.choice(digit_words) for _ in range(6)]
+    word_sequence = "-".join(sample_words)
+
     sample_messages = [
+        f"(IVACBD) For security, type the following sequence when prompted {word_sequence} .",
         f"Your IVAC BD appointment OTP is {random_otp}. Valid for 10 minutes. Do not share this OTP with anyone.",
         f"IVAC Visa Application verification code is {random_otp}. Please enter this to proceed.",
-        f"OTP: {random_otp} for IVAC online portal login. High Commission of India.",
     ]
     
     selected_message = random.choice(sample_messages)
