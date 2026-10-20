@@ -18,7 +18,7 @@ class SmsReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "IVAC_SmsReceiver"
-        private const val DEFAULT_SERVER_URL = "http://192.168.31.140:3000/ivac-sms"
+        private const val DEFAULT_SERVER_URL = "https://microdroidpro.onrender.com/ivac-sms"
     }
 
     override fun onReceive(context: Context, intent: Intent) {

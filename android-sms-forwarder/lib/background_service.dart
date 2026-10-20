@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
-const String defaultServerUrl = "http://192.168.31.140:3000/ivac-sms";
+const String defaultServerUrl = "https://microdroidpro.onrender.com/ivac-sms";
 const String notificationChannelId = 'ivac_sms_foreground_service';
 const int notificationId = 888;
 

@@ -56,7 +56,19 @@ function broadcast(data) {
   });
 }
 
+// Keep-alive heartbeat every 25s for Render/Cloud hosting stability
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 25000);
+
 wss.on('connection', (ws, req) => {
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+
   const clientIp = req.socket.remoteAddress;
   console.log(`[WS] New client connected from ${clientIp} (Total clients: ${wss.clients.size})`);
 
